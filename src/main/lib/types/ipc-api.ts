@@ -9,4 +9,6 @@ export interface StopRecorderAPI {
   stopRecording: () => void;
 }
 
-export type ElectronAPI = RecorderAPI | StopRecorderAPI;
+export interface EditorAPI {
+  type: 'editor';
+}

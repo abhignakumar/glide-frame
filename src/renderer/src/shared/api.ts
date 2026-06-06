@@ -1,4 +1,4 @@
-import type { ElectronAPI } from 'src/main/lib/types';
+import type { ElectronAPI } from 'src/preload/index';
 
 export function getElectronApi<T extends ElectronAPI['type']>(
   expected: T,
