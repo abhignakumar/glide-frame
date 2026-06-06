@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -6,8 +7,10 @@ import path from 'path';
 import { BrowserWindow, screen, Menu, app } from 'electron';
 
 import { projectsRootDir } from '../lib/config';
+import { GROUP_CLICKS_WITHIN_TIME_MS, ZOOM_TRANSITION_TIME_MS } from '../lib/constants';
 import { createRecorderWindow, createStopRecorderWindow } from '../windows';
 
+import type { MouseClick, ZoomSegment } from '../lib/types/types';
 import type { ChildProcess } from 'child_process';
 
 let activeRecordingProcess: ChildProcess | null = null;
@@ -90,8 +93,22 @@ export function handleListDisplaySources(event: Electron.IpcMainInvokeEvent) {
 
             if (code === 0) {
               try {
-                // TODO
-                console.log('Open Editor Window');
+                const mouseClicksFileData = fs.readFileSync(
+                  path.join(outputPath, 'mouse-clicks.json'),
+                  'utf-8',
+                );
+                const mouseClicks = JSON.parse(mouseClicksFileData) as MouseClick[];
+                const zoomSegments = generateZoomSegments(mouseClicks);
+                const projectData = {
+                  id: crypto.randomBytes(6).toString('base64url'),
+                  createdAt: new Date().toISOString(),
+                  zoomSegments: zoomSegments,
+                };
+                fs.writeFileSync(
+                  path.join(projectDir, 'project.json'),
+                  JSON.stringify(projectData, null, 2),
+                );
+                // TODO: Open Editor Window
               } catch (err) {
                 console.error('Failed to open editor window:', err);
                 void createRecorderWindow();
@@ -154,4 +171,31 @@ export function stopRecordingProcess(): void {
       console.warn('[Recorder stdin] Synchronous write error:', err);
     }
   }
+}
+
+function generateZoomSegments(mouseClicks: MouseClick[]): ZoomSegment[] {
+  const zoomSegments: ZoomSegment[] = [];
+  let tempZoomSegment: ZoomSegment | null = null;
+
+  for (let i = 0; i < mouseClicks.length; i++) {
+    tempZoomSegment ??= {
+      id: crypto.randomBytes(6).toString('base64url'),
+      startTimeMs: Math.max(0, mouseClicks[i].processTimeMs - ZOOM_TRANSITION_TIME_MS),
+      endTimeMs: 0,
+      scale: 2,
+    };
+    if (
+      i + 1 >= mouseClicks.length ||
+      (mouseClicks[i + 1].processTimeMs - mouseClicks[i].processTimeMs >
+        GROUP_CLICKS_WITHIN_TIME_MS &&
+        mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS + ZOOM_TRANSITION_TIME_MS <
+          mouseClicks[i + 1].processTimeMs - ZOOM_TRANSITION_TIME_MS)
+    ) {
+      tempZoomSegment.endTimeMs = mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS;
+      zoomSegments.push(tempZoomSegment);
+      tempZoomSegment = null;
+    }
+  }
+
+  return zoomSegments;
 }

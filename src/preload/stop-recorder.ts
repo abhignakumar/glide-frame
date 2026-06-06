@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 import { STOP_RECORDING } from '../main/lib/constants';
 
-import type { StopRecorderAPI } from '../main/lib/types';
+import type { StopRecorderAPI } from '../main/lib/types/ipc-api';
 
 if (process.contextIsolated) {
   try {
