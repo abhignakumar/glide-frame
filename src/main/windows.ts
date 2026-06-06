@@ -1,7 +1,7 @@
 import { join } from 'path';
 
 import { is } from '@electron-toolkit/utils';
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, screen } from 'electron';
 
 export async function createRecorderWindow(): Promise<BrowserWindow> {
   const recorderWindow = new BrowserWindow({
@@ -64,4 +64,31 @@ export async function createStopRecorderWindow(): Promise<BrowserWindow> {
   }
 
   return stopRecorderWindow;
+}
+
+export async function createEditorWindow(): Promise<BrowserWindow> {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const editorWindow = new BrowserWindow({
+    width,
+    height,
+    show: false,
+    resizable: false,
+    fullscreen: false,
+    fullscreenable: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/editor.js'),
+    },
+  });
+
+  editorWindow.on('ready-to-show', () => {
+    editorWindow.show();
+  });
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    await editorWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/editor.html`);
+  } else {
+    await editorWindow.loadFile(join(__dirname, '../renderer/editor.html'));
+  }
+
+  return editorWindow;
 }
