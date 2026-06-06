@@ -1,7 +1,7 @@
 import { optimizer } from '@electron-toolkit/utils';
 import { app, dialog, systemPreferences, shell, BrowserWindow } from 'electron';
 
-import { setupRecorderIpc, setupStopRecorderIpc } from './ipc';
+import { setupIpc } from './ipc/ipc';
 import { createRecorderWindow } from './windows';
 
 void app.whenReady().then(async () => {
@@ -43,8 +43,7 @@ void app.whenReady().then(async () => {
     }
   });
 
-  setupRecorderIpc();
-  setupStopRecorderIpc();
+  setupIpc();
 
   // Create and show the recorder window
   await createRecorderWindow();
