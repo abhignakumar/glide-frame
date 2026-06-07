@@ -1,3 +1,5 @@
+import type { MouseMove, ProjectData } from './types';
+
 export interface RecorderAPI {
   type: 'recorder';
   closeCurrentWindow: () => void;
@@ -11,4 +13,6 @@ export interface StopRecorderAPI {
 
 export interface EditorAPI {
   type: 'editor';
+  getProjectData: () => Promise<ProjectData>;
+  getMouseMoves: () => Promise<MouseMove[]>;
 }

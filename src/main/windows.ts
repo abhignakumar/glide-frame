@@ -66,7 +66,7 @@ export async function createStopRecorderWindow(): Promise<BrowserWindow> {
   return stopRecorderWindow;
 }
 
-export async function createEditorWindow(): Promise<BrowserWindow> {
+export async function createEditorWindow(projectDir: string): Promise<BrowserWindow> {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   const editorWindow = new BrowserWindow({
     width,
@@ -77,6 +77,7 @@ export async function createEditorWindow(): Promise<BrowserWindow> {
     fullscreenable: false,
     webPreferences: {
       preload: join(__dirname, '../preload/editor.js'),
+      additionalArguments: [`projectDir=${projectDir}`],
     },
   });
 
