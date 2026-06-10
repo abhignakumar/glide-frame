@@ -6,7 +6,7 @@ import path from 'path';
 
 import { BrowserWindow, screen, Menu, app } from 'electron';
 
-import { defaultSpringAnimationConfig, projectsRootDir } from '../lib/config';
+import { DEFAULT_ALL_SPRING_CONFIGS, DEFAULT_PROJECTS_ROOT_DIR } from '../lib/config';
 import { GROUP_CLICKS_WITHIN_TIME_MS } from '../lib/constants';
 import { calculateSpringSettlingDurationMs } from '../lib/utils';
 import { createEditorWindow, createRecorderWindow, createStopRecorderWindow } from '../windows';
@@ -142,7 +142,7 @@ export function handleListDisplaySources(event: Electron.IpcMainInvokeEvent) {
 }
 
 function getProjectDirPath(display: Electron.Display): string {
-  const resolvedRootDir = projectsRootDir.replace(/^~/, os.homedir());
+  const resolvedRootDir = DEFAULT_PROJECTS_ROOT_DIR.replace(/^~/, os.homedir());
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const timeStr = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
@@ -178,10 +178,11 @@ function generateZoomSegments(mouseClicks: MouseClick[]): ZoomSegment[] {
   const zoomSegments: ZoomSegment[] = [];
   let tempZoomSegment: ZoomSegment | null = null;
   const zoomTransitionTimeMs = calculateSpringSettlingDurationMs(
-    defaultSpringAnimationConfig.screenMovement,
+    DEFAULT_ALL_SPRING_CONFIGS.screenMovement,
   );
+  const approximateVideoEndTimeMs = mouseClicks[mouseClicks.length - 1].processTimeMs;
 
-  for (let i = 0; i < mouseClicks.length; i++) {
+  for (let i = 0; i < mouseClicks.length - 2; i++) {
     tempZoomSegment ??= {
       id: crypto.randomBytes(6).toString('base64url'),
       startTimeMs: Math.max(0, mouseClicks[i].processTimeMs - zoomTransitionTimeMs),
@@ -189,13 +190,16 @@ function generateZoomSegments(mouseClicks: MouseClick[]): ZoomSegment[] {
       scale: 2,
     };
     if (
-      i + 1 >= mouseClicks.length ||
+      i + 1 >= mouseClicks.length - 2 ||
       (mouseClicks[i + 1].processTimeMs - mouseClicks[i].processTimeMs >
         GROUP_CLICKS_WITHIN_TIME_MS &&
         mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS + zoomTransitionTimeMs <
           mouseClicks[i + 1].processTimeMs - zoomTransitionTimeMs)
     ) {
-      tempZoomSegment.endTimeMs = mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS;
+      tempZoomSegment.endTimeMs =
+        mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS < approximateVideoEndTimeMs
+          ? mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS
+          : approximateVideoEndTimeMs - 1000;
       zoomSegments.push(tempZoomSegment);
       tempZoomSegment = null;
     }

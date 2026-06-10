@@ -26,3 +26,9 @@ export interface ZoomSegment {
   endTimeMs: number;
   scale: number;
 }
+
+export interface SpringConfig {
+  mass: number;
+  stiffness: number;
+  damping: number;
+}

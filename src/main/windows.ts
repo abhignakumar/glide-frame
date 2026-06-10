@@ -3,6 +3,8 @@ import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { BrowserWindow, screen } from 'electron';
 
+import { startVideoServer, stopVideoServer } from './video-server';
+
 export async function createRecorderWindow(): Promise<BrowserWindow> {
   const recorderWindow = new BrowserWindow({
     width: 134,
@@ -67,6 +69,13 @@ export async function createStopRecorderWindow(): Promise<BrowserWindow> {
 }
 
 export async function createEditorWindow(projectDir: string): Promise<BrowserWindow> {
+  let videoServerPort = -1;
+  try {
+    videoServerPort = await startVideoServer();
+  } catch (error) {
+    console.error('Failed to start video server:', error);
+    throw error;
+  }
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   const editorWindow = new BrowserWindow({
     width,
@@ -77,12 +86,16 @@ export async function createEditorWindow(projectDir: string): Promise<BrowserWin
     fullscreenable: false,
     webPreferences: {
       preload: join(__dirname, '../preload/editor.js'),
-      additionalArguments: [`projectDir=${projectDir}`],
+      additionalArguments: [`projectDir=${projectDir}`, `videoServerPort=${videoServerPort}`],
     },
   });
 
   editorWindow.on('ready-to-show', () => {
     editorWindow.show();
+  });
+
+  editorWindow.on('close', () => {
+    stopVideoServer();
   });
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

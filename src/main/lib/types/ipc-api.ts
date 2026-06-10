@@ -15,4 +15,6 @@ export interface EditorAPI {
   type: 'editor';
   getProjectData: () => Promise<ProjectData>;
   getMouseMoves: () => Promise<MouseMove[]>;
+  getProjectDir: () => string;
+  getVideoSrcUrl: () => string;
 }

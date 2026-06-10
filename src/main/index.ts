@@ -2,6 +2,7 @@ import { optimizer } from '@electron-toolkit/utils';
 import { app, dialog, systemPreferences, shell, BrowserWindow } from 'electron';
 
 import { setupIpc } from './ipc/ipc';
+import { stopVideoServer } from './video-server';
 import { createRecorderWindow } from './windows';
 
 void app.whenReady().then(async () => {
@@ -53,4 +54,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('will-quit', () => {
+  stopVideoServer();
 });
