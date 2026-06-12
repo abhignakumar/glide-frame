@@ -1,8 +1,16 @@
+import { CirclePause, CirclePlay, SkipBack, SkipForward } from 'lucide-react';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 import { editorApi } from './api';
+import wallpaper from './assets/wallpaper.jpg';
+import Timeline from './components/Timeline';
 import { computeFinalFrameStates } from './final-frames';
-import { FRAME_DURATION_IN_SECONDS } from './lib/config';
+import {
+  DEFAULT_PIXELS_PER_SECOND,
+  FRAME_DURATION_IN_SECONDS,
+  MIN_PIXELS_PER_SECOND,
+  MAX_PIXELS_PER_SECOND,
+} from './lib/config';
 import { formatTime, getInterpolatedFrame } from './lib/utils';
 import { generateZoomCenters } from './zoom-centers';
 
@@ -13,7 +21,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const timeLabelRef = useRef<HTMLSpanElement>(null);
-  const scrubberRef = useRef<HTMLInputElement>(null);
+  const scrubberRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -24,6 +32,7 @@ export default function App() {
     width: 'auto',
     height: 'auto',
   });
+  const [pixelsPerSecond, setPixelsPerSecond] = useState(DEFAULT_PIXELS_PER_SECOND);
 
   // --- Core Engine: Render Loop ---
   // We use this function to manually apply transforms without triggering React renders
@@ -42,12 +51,18 @@ export default function App() {
 
     // 2. Update Timeline UI (Scrubber & Time Code)
     if (scrubberRef.current) {
-      scrubberRef.current.value = currentSec.toString();
+      scrubberRef.current.style.transform = `translateX(${currentSec * pixelsPerSecond}px)`;
     }
     if (timeLabelRef.current) {
       timeLabelRef.current.innerText = formatTime(currentSec);
     }
-  }, [finalFrameStates]);
+  }, [finalFrameStates, pixelsPerSecond]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      renderFrame();
+    }
+  }, [pixelsPerSecond, isPlaying, renderFrame]);
 
   const loop = useCallback(
     function tick() {
@@ -149,13 +164,6 @@ export default function App() {
     void computeAndSetFinalFrameStates();
   }, [videoSizing, computeAndSetFinalFrameStates]);
 
-  const handleScrub = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!videoRef.current) return;
-    const newTime = parseFloat(e.target.value);
-    videoRef.current.currentTime = newTime;
-    renderFrame();
-  };
-
   function handleOnLoadedMetadata(e: React.SyntheticEvent<HTMLVideoElement, Event>) {
     const video = e.currentTarget;
     const duration = video.duration;
@@ -175,91 +183,111 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col w-screen h-screen bg-neutral-900 text-white overflow-hidden">
+    <div className="flex flex-col w-screen h-screen bg-black text-white overflow-hidden">
       {/* --- PREVIEW AREA (Top 75%) --- */}
-      <div
-        ref={wrapperRef}
-        className="shrink-0 h-[75%] w-full flex items-center justify-center overflow-hidden border-b border-neutral-800"
-      >
-        {/* The 1920x1080 Fixed Canvas Area */}
-        <div
-          className="relative bg-blue-500 overflow-hidden flex items-center justify-center shrink-0"
-          style={{
-            width: '1920px',
-            height: '1080px',
-            transform: `scale(${viewportScale})`,
-            transformOrigin: 'center center',
-          }}
-        >
-          <video
-            ref={videoRef}
-            src={editorApi.getVideoSrcUrl()}
-            preload="auto"
-            onLoadedMetadata={handleOnLoadedMetadata}
-            className="absolute"
-            style={{
-              width: videoSizing.width,
-              height: videoSizing.height,
-              transformOrigin: 'center center',
-              willChange: 'transform',
-            }}
-          />
+      <div className="shrink-0 h-[80%] w-full">
+        <div className="h-full flex flex-col">
+          {/* Preview Surface */}
+          <div
+            ref={wrapperRef}
+            className="flex-1 flex items-center justify-center overflow-hidden pt-5"
+          >
+            {/* The 1920x1080 Fixed Canvas Area */}
+            <div
+              className="relative overflow-hidden flex items-center justify-center shrink-0 rounded-md"
+              style={{
+                width: '1920px',
+                height: '1080px',
+                transform: `scale(${viewportScale})`,
+                transformOrigin: 'center center',
+
+                backgroundImage: `url(${wallpaper})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+            >
+              <video
+                ref={videoRef}
+                src={editorApi.getVideoSrcUrl()}
+                preload="auto"
+                onLoadedMetadata={handleOnLoadedMetadata}
+                className="absolute shadow-black shadow-2xl"
+                style={{
+                  width: videoSizing.width,
+                  height: videoSizing.height,
+                  transformOrigin: 'center center',
+                  willChange: 'transform',
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="h-16 flex items-center px-6 w-full shrink-0">
+            {/* Left spacer to keep center controls perfectly centered */}
+            <div className="flex-1"></div>
+
+            {/* Center: Playback Controls */}
+            <div className="flex gap-x-2 justify-center">
+              <button
+                onClick={() => {
+                  if (!videoRef.current) return;
+                  setIsPlaying(false);
+                  videoRef.current.currentTime = 0;
+                  renderFrame();
+                }}
+                className="w-12 h-12 rounded-lg flex items-center justify-center hover:bg-neutral-900 transition-colors duration-200"
+              >
+                <SkipBack size={20} />
+              </button>
+              <button
+                onClick={() => setIsPlaying((prev) => !prev)}
+                className="w-12 h-12 rounded-lg flex items-center justify-center hover:bg-neutral-900 transition-colors duration-200"
+              >
+                {isPlaying ? <CirclePause /> : <CirclePlay />}
+              </button>
+              <button
+                onClick={() => {
+                  if (!videoRef.current) return;
+                  setIsPlaying(false);
+                  videoRef.current.currentTime = Math.max(0, duration - FRAME_DURATION_IN_SECONDS);
+                  renderFrame();
+                }}
+                className="w-12 h-12 rounded-lg flex items-center justify-center hover:bg-neutral-900 transition-colors duration-200"
+              >
+                <SkipForward size={20} />
+              </button>
+            </div>
+
+            {/* Right: Zoom Slider */}
+            <div className="flex-1 flex items-center justify-end gap-x-3">
+              <span className="text-xs text-neutral-400 font-medium">Timeline Zoom</span>
+              <input
+                type="range"
+                min={MIN_PIXELS_PER_SECOND}
+                max={MAX_PIXELS_PER_SECOND}
+                value={pixelsPerSecond}
+                onChange={(e) => setPixelsPerSecond(Number(e.target.value))}
+                className="w-32 accent-white"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* --- TIMELINE AREA (Bottom 25%) --- */}
-      <div className="grow flex flex-col p-4 space-y-4">
-        {/* Controls */}
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:bg-neutral-200 transition-colors focus:outline-none"
-          >
-            {isPlaying ? (
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 fill-current ml-1" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
-
-          <span ref={timeLabelRef} className="font-mono text-sm opacity-80 w-20">
-            00:00:00
-          </span>
-          <span className="font-mono text-sm opacity-50">/ {formatTime(duration)}</span>
-        </div>
-
-        {/* Timeline Scrubber */}
-        <div className="relative w-full h-8 flex items-center group cursor-pointer">
-          {/* Custom Track Visual (can be expanded to show timestamps/ticks later) */}
-          <div className="absolute left-0 right-0 h-2 bg-neutral-800 rounded-full overflow-hidden">
-            {/* Markers placeholder */}
-            <div className="w-full h-full opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTM5IDB2MTBoMVYweiIgZmlsbD0iI0ZGRiIvPjwvc3ZnPg==')]" />
-          </div>
-
-          <input
-            type="range"
-            defaultValue={0}
-            ref={scrubberRef}
-            min={0}
-            max={duration || 1}
-            step={FRAME_DURATION_IN_SECONDS}
-            onChange={handleScrub}
-            onMouseDown={() => {
-              if (isPlaying) setIsPlaying(false);
-            }}
-            className="absolute w-full h-full opacity-0 cursor-pointer z-10"
-          />
-        </div>
-
-        <p className="text-xs text-neutral-500 text-center mt-auto">
-          Tip: Use <kbd className="bg-neutral-800 px-1 py-0.5 rounded">Space</kbd> to play/pause,
-          and <kbd className="bg-neutral-800 px-1 py-0.5 rounded">Left</kbd> /{' '}
-          <kbd className="bg-neutral-800 px-1 py-0.5 rounded">Right</kbd> to step frames.
-        </p>
+      {/* --- TIMELINE AREA (Bottom 20%) --- */}
+      <div className="h-full overflow-x-scroll overflow-y-hidden px-4 scrollbar-none">
+        <Timeline
+          duration={duration}
+          pixelsPerSecond={pixelsPerSecond}
+          scrubberRef={scrubberRef}
+          onSeek={(time) => {
+            if (!videoRef.current) return;
+            // Clamp the time to valid boundaries
+            videoRef.current.currentTime = Math.min(Math.max(0, time), duration);
+            renderFrame();
+          }}
+        />
       </div>
     </div>
   );
