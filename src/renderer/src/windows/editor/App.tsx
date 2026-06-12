@@ -15,7 +15,7 @@ import { formatTime, getInterpolatedFrame } from './lib/utils';
 import { generateZoomCenters } from './zoom-centers';
 
 import type { FinalFrameState } from './lib/types';
-import type { TMouseMove } from 'src/preload';
+import type { TMouseMove, TZoomSegment } from 'src/preload';
 
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,6 +33,7 @@ export default function App() {
     height: 'auto',
   });
   const [pixelsPerSecond, setPixelsPerSecond] = useState(DEFAULT_PIXELS_PER_SECOND);
+  const [zoomSegments, setZoomSegments] = useState<TZoomSegment[]>([]);
 
   // --- Core Engine: Render Loop ---
   // We use this function to manually apply transforms without triggering React renders
@@ -57,6 +58,12 @@ export default function App() {
       timeLabelRef.current.innerText = formatTime(currentSec);
     }
   }, [finalFrameStates, pixelsPerSecond]);
+
+  useEffect(() => {
+    void editorApi.getProjectData().then((projectData) => {
+      setZoomSegments(projectData.zoomSegments);
+    });
+  }, []);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -280,6 +287,7 @@ export default function App() {
         <Timeline
           duration={duration}
           pixelsPerSecond={pixelsPerSecond}
+          zoomSegments={zoomSegments}
           scrubberRef={scrubberRef}
           onSeek={(time) => {
             if (!videoRef.current) return;

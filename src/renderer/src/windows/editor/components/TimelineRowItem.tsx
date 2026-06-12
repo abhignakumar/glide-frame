@@ -2,10 +2,12 @@ export default function TimelineRowItem({
   startTimeMs,
   endTimeMs,
   pixelsPerSecond,
+  colorClass,
 }: {
   startTimeMs: number;
   endTimeMs: number;
   pixelsPerSecond: number;
+  colorClass: string;
 }) {
   const startSec = startTimeMs / 1000;
   const endSec = endTimeMs / 1000;
@@ -20,8 +22,10 @@ export default function TimelineRowItem({
     step = 0.5;
   } else if (pixelsPerSecond >= 100) {
     step = 1;
-  } else {
+  } else if (pixelsPerSecond >= 50) {
     step = 2.5;
+  } else {
+    step = 5;
   }
 
   const lines: React.ReactNode[] = [];
@@ -42,7 +46,7 @@ export default function TimelineRowItem({
 
   return (
     <div
-      className="absolute top-0 bottom-0 bg-yellow-700 border border-yellow-600 hover:border-white/70 transition-all duration-250 ease-in-out rounded-xl overflow-hidden shadow-sm"
+      className={`absolute top-0 bottom-0 ${colorClass} border border-neutral-500 hover:border-white/80 transition-all duration-250 ease-in-out rounded-xl overflow-hidden shadow-sm`}
       style={{
         left: `${left}px`,
         width: `${width}px`,

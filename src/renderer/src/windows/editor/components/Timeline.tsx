@@ -1,14 +1,18 @@
 import TimelineAllRows from './TimelineAllRows';
 import TimelineRuler from './TimelineRuler';
 
+import type { TZoomSegment } from 'src/preload';
+
 export default function Timeline({
   duration,
   pixelsPerSecond,
+  zoomSegments,
   scrubberRef,
   onSeek,
 }: {
   duration: number;
   pixelsPerSecond: number;
+  zoomSegments: TZoomSegment[];
   scrubberRef: React.RefObject<HTMLDivElement | null>;
   onSeek: (time: number) => void;
 }) {
@@ -16,7 +20,11 @@ export default function Timeline({
   return (
     <div className="relative h-full select-none" style={{ width: `${timelineWidth}px` }}>
       <TimelineRuler width={timelineWidth} pixelsPerSecond={pixelsPerSecond} onSeek={onSeek} />
-      <TimelineAllRows duration={duration} pixelsPerSecond={pixelsPerSecond} />
+      <TimelineAllRows
+        duration={duration}
+        pixelsPerSecond={pixelsPerSecond}
+        zoomSegments={zoomSegments}
+      />
 
       {/* --- PLAYHEAD / SCRUBBER --- */}
       <div

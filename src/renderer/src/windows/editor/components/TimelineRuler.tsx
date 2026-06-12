@@ -33,9 +33,12 @@ export default function TimelineRuler({
     // Medium Zoom (100 to 299): Steps every 1s, Major every 1s
     step = 1;
     isMajor = (t) => t % 1 === 0;
-  } else {
+  } else if (pixelsPerSecond >= 50) {
     // Low Zoom (60 to 99): Steps every 2.5s, Major every 5s
     step = 2.5;
+    isMajor = (t) => t % 5 === 0;
+  } else {
+    step = 5;
     isMajor = (t) => t % 5 === 0;
   }
 
