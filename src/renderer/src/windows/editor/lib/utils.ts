@@ -26,10 +26,6 @@ export function genericBinarySearch<T>(
   return left;
 }
 
-/**
- * Binary search to find the interpolated frame state exactly at a given millisecond.
- * O(log N) performance, meaning it can effortlessly handle hours of 60 FPS baked frames.
- */
 export function getInterpolatedFrame(
   timestampMs: number,
   frames: FinalFrameState[],
@@ -49,7 +45,6 @@ export function getInterpolatedFrame(
     else return frames[mid];
   }
 
-  // Linear Interpolation (LERP)
   const f1 = frames[high];
   const f2 = frames[low];
   const timeDiff = f2.timestampMs - f1.timestampMs;
@@ -84,4 +79,28 @@ export function formatRulerTime(totalSeconds: number) {
     .toString()
     .padStart(2, '0');
   return `${m}:${s}`;
+}
+
+export function getStepAndIsMajorForTimelineZoom(pixelsPerSecond: number): {
+  step: number;
+  isMajor: (t: number) => boolean;
+} {
+  let step = 1;
+  let isMajor = (t: number) => t % 1 === 0;
+
+  if (pixelsPerSecond >= 300) {
+    step = 0.5;
+    isMajor = (t) => t % 1 === 0;
+  } else if (pixelsPerSecond >= 100) {
+    step = 1;
+    isMajor = (t) => t % 1 === 0;
+  } else if (pixelsPerSecond >= 50) {
+    step = 2.5;
+    isMajor = (t) => t % 5 === 0;
+  } else {
+    step = 5;
+    isMajor = (t) => t % 5 === 0;
+  }
+
+  return { step, isMajor };
 }
