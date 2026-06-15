@@ -14,4 +14,8 @@ export interface FinalFrameState {
   videoTranslateX: number;
   videoTranslateY: number;
   videoScale: number;
+  mouseX: number;
+  mouseY: number;
+  mouseScale: number;
+  mouseRotation: number;
 }

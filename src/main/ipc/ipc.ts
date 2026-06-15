@@ -6,13 +6,14 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { handleListDisplaySources, stopRecordingProcess } from './recorder-ipc';
 import {
   CLOSE_CURRENT_WINDOW,
+  GET_MOUSE_CLICKS,
   GET_MOUSE_MOVES,
   GET_PROJECT_DATA,
   LIST_DISPLAY_SOURCES,
   STOP_RECORDING,
 } from '../lib/constants';
 
-import type { MouseMove, ProjectData } from '../lib/types/types';
+import type { MouseClick, MouseMove, ProjectData } from '../lib/types/types';
 
 export function setupIpc() {
   setupRecorderIpc();
@@ -53,5 +54,14 @@ function setupEditorIpc(): void {
     );
     const mouseMoves = JSON.parse(mouseMovesJsonString) as MouseMove[];
     return mouseMoves;
+  });
+
+  ipcMain.handle(GET_MOUSE_CLICKS, (_event, projectDir: string): MouseClick[] => {
+    const mouseClicksJsonString = fs.readFileSync(
+      path.join(projectDir, 'recording', 'mouse-clicks.json'),
+      'utf-8',
+    );
+    const mouseClicks = JSON.parse(mouseClicksJsonString) as MouseClick[];
+    return mouseClicks;
   });
 }

@@ -15,7 +15,7 @@ export default function TimelineAllRows({
   zoomSegments,
 }: TimelineAllRowsProps) {
   return (
-    <div className="w-full flex flex-col pt-3 pb-4 px-0 gap-y-2">
+    <div className="w-full flex flex-col py-3 gap-y-3">
       <TimelineRow>
         <TimelineRowItem
           startTimeMs={0}

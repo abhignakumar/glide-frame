@@ -12,6 +12,8 @@ interface MainAreaProps {
   videoSizing: { width: string; height: string } | null;
   setVideoSizing: React.Dispatch<React.SetStateAction<{ width: string; height: string } | null>>;
   wrapperRef: React.RefObject<HTMLDivElement | null>;
+  transformContainerRef: React.RefObject<HTMLDivElement | null>;
+  mouseRef: React.RefObject<HTMLImageElement | null>;
 }
 
 export default function MainArea({
@@ -25,6 +27,8 @@ export default function MainArea({
   setVideoSizing,
   videoSizing,
   wrapperRef,
+  transformContainerRef,
+  mouseRef,
 }: MainAreaProps) {
   return (
     <div className="shrink-0 h-[80%] w-full">
@@ -35,6 +39,8 @@ export default function MainArea({
           videoSizing={videoSizing}
           setVideoSizing={setVideoSizing}
           wrapperRef={wrapperRef}
+          transformContainerRef={transformContainerRef}
+          mouseRef={mouseRef}
         />
         <Controls
           isPlaying={isPlaying}

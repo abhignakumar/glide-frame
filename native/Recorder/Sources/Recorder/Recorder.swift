@@ -210,7 +210,7 @@ class Recorder: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable 
         // Strict 60 FPS Cap
         config.minimumFrameInterval = CMTime(value: 1, timescale: 60)
         config.queueDepth = 5
-        config.showsCursor = true
+        config.showsCursor = false
         config.captureResolution = .best // Requires macOS 14.0
         
         // AVAssetWriter Setup (H.264 | 60 FPS)

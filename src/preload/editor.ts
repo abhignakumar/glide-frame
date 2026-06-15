@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-import { GET_MOUSE_MOVES, GET_PROJECT_DATA } from '../main/lib/constants';
+import { GET_MOUSE_MOVES, GET_MOUSE_CLICKS, GET_PROJECT_DATA } from '../main/lib/constants';
 
 import type { EditorAPI } from '../main/lib/types/ipc-api';
 
@@ -22,6 +22,7 @@ if (process.contextIsolated) {
       type: 'editor',
       getProjectData: () => ipcRenderer.invoke(GET_PROJECT_DATA, projectDir),
       getMouseMoves: () => ipcRenderer.invoke(GET_MOUSE_MOVES, projectDir),
+      getMouseClicks: () => ipcRenderer.invoke(GET_MOUSE_CLICKS, projectDir),
       getProjectDir: () => projectDir,
       getVideoSrcUrl: () =>
         `http://127.0.0.1:${videoServerPort}/stream-video?videoPath=${encodeURIComponent(

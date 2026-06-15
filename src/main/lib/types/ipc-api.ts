@@ -1,4 +1,4 @@
-import type { MouseMove, ProjectData } from './types';
+import type { MouseMove, MouseClick, ProjectData } from './types';
 
 export interface RecorderAPI {
   type: 'recorder';
@@ -15,6 +15,7 @@ export interface EditorAPI {
   type: 'editor';
   getProjectData: () => Promise<ProjectData>;
   getMouseMoves: () => Promise<MouseMove[]>;
+  getMouseClicks: () => Promise<MouseClick[]>;
   getProjectDir: () => string;
   getVideoSrcUrl: () => string;
 }

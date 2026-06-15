@@ -6,6 +6,8 @@ interface PreviewContainerProps {
   videoSizing: { width: string; height: string } | null;
   setVideoSizing: React.Dispatch<React.SetStateAction<{ width: string; height: string } | null>>;
   wrapperRef: React.RefObject<HTMLDivElement | null>;
+  transformContainerRef: React.RefObject<HTMLDivElement | null>;
+  mouseRef: React.RefObject<HTMLImageElement | null>;
 }
 
 export default function PreviewContainer({
@@ -14,6 +16,8 @@ export default function PreviewContainer({
   videoSizing,
   setVideoSizing,
   wrapperRef,
+  transformContainerRef,
+  mouseRef,
 }: PreviewContainerProps) {
   return (
     <div ref={wrapperRef} className="flex-1 flex items-center justify-center overflow-hidden my-6">
@@ -23,6 +27,8 @@ export default function PreviewContainer({
           videoRef={videoRef}
           videoSizing={videoSizing}
           setVideoSizing={setVideoSizing}
+          transformContainerRef={transformContainerRef}
+          mouseRef={mouseRef}
         />
       )}
     </div>
