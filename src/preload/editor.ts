@@ -1,6 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-import { GET_MOUSE_MOVES, GET_MOUSE_CLICKS, GET_PROJECT_DATA } from '../main/lib/constants';
+import {
+  GET_MOUSE_MOVES,
+  GET_MOUSE_CLICKS,
+  GET_PROJECT_DATA,
+  START_EXPORT,
+  OPEN_EXPORT_VIDEO_DIALOG,
+} from '../main/lib/constants';
 
 import type { EditorAPI } from '../main/lib/types/ipc-api';
 
@@ -28,8 +34,25 @@ if (process.contextIsolated) {
         `http://127.0.0.1:${videoServerPort}/stream-video?videoPath=${encodeURIComponent(
           `${projectDir}/recording/display.mp4`,
         )}`,
+      openExportVideoDialog: async () => {
+        const { filePath } = (await ipcRenderer.invoke(OPEN_EXPORT_VIDEO_DIALOG)) as {
+          filePath: string | null;
+        };
+        return filePath;
+      },
     } satisfies EditorAPI);
   } catch (error) {
     console.error(error);
   }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+    const { type, filePath } = event.data as { type: string; filePath: string };
+    if (type === 'INIT_EXPORT_STREAM') {
+      const port = event.ports.length > 0 ? event.ports[0] : null;
+      if (port) {
+        ipcRenderer.postMessage(START_EXPORT, { filePath }, [port]);
+      }
+    }
+  });
 }

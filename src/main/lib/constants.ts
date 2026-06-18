@@ -4,6 +4,8 @@ export const STOP_RECORDING = 'stop-recording';
 export const GET_PROJECT_DATA = 'get-project-data';
 export const GET_MOUSE_MOVES = 'get-mouse-moves';
 export const GET_MOUSE_CLICKS = 'get-mouse-clicks';
+export const OPEN_EXPORT_VIDEO_DIALOG = 'open-export-video-dialog';
+export const START_EXPORT = 'start-export';
 
 export const GROUP_CLICKS_WITHIN_TIME_MS = 3000;
 

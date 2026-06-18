@@ -18,4 +18,5 @@ export interface EditorAPI {
   getMouseClicks: () => Promise<MouseClick[]>;
   getProjectDir: () => string;
   getVideoSrcUrl: () => string;
+  openExportVideoDialog: () => Promise<string | null>;
 }

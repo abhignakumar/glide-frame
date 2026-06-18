@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
+import cors from 'cors';
 import express from 'express';
 
 import type { Server } from 'http';
@@ -16,6 +17,7 @@ let allocatedPort: number = 0;
 export function startVideoServer(): Promise<number> {
   return new Promise((resolve, reject) => {
     const app = express();
+    app.use(cors());
 
     // Express Endpoint: /stream-video?videoPath=...
     app.get('/stream-video', (req, res) => {

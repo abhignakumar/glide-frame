@@ -3,6 +3,7 @@ import path from 'path';
 
 import { ipcMain, BrowserWindow } from 'electron';
 
+import { handleExportVideoDialog, handleStartExport } from './editor-ipc';
 import { handleListDisplaySources, stopRecordingProcess } from './recorder-ipc';
 import {
   CLOSE_CURRENT_WINDOW,
@@ -10,6 +11,8 @@ import {
   GET_MOUSE_MOVES,
   GET_PROJECT_DATA,
   LIST_DISPLAY_SOURCES,
+  OPEN_EXPORT_VIDEO_DIALOG,
+  START_EXPORT,
   STOP_RECORDING,
 } from '../lib/constants';
 
@@ -63,5 +66,14 @@ function setupEditorIpc(): void {
     );
     const mouseClicks = JSON.parse(mouseClicksJsonString) as MouseClick[];
     return mouseClicks;
+  });
+
+  ipcMain.handle(OPEN_EXPORT_VIDEO_DIALOG, async (event) => {
+    return await handleExportVideoDialog(event);
+  });
+
+  ipcMain.on(START_EXPORT, (event, args) => {
+    const { filePath } = args as { filePath: string };
+    handleStartExport(event, filePath);
   });
 }

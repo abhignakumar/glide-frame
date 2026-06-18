@@ -13,11 +13,12 @@ import { createEditorWindow, createRecorderWindow, createStopRecorderWindow } fr
 
 import type { MouseClick, ZoomSegment } from '../lib/types/types';
 import type { ChildProcess } from 'child_process';
+import type { Display, IpcMainInvokeEvent } from 'electron';
 
 let activeRecordingProcess: ChildProcess | null = null;
 let activeStopWindow: BrowserWindow | null = null;
 
-export function handleListDisplaySources(event: Electron.IpcMainInvokeEvent) {
+export function handleListDisplaySources(event: IpcMainInvokeEvent) {
   const displays = screen.getAllDisplays();
   const recorderWindow = BrowserWindow.fromWebContents(event.sender);
 
@@ -141,7 +142,7 @@ export function handleListDisplaySources(event: Electron.IpcMainInvokeEvent) {
   return;
 }
 
-function getProjectDirPath(display: Electron.Display): string {
+function getProjectDirPath(display: Display): string {
   const resolvedRootDir = DEFAULT_PROJECTS_ROOT_DIR.replace(/^~/, os.homedir());
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

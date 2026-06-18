@@ -1,3 +1,4 @@
+import { ArrowUpFromLine } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { editorApi } from './api';
@@ -10,6 +11,7 @@ import {
   MOUSE_ARROW_DATA,
   MOUSE_SIZE_TIMES,
 } from './lib/config';
+import { exportVideo } from './lib/export';
 import { getInterpolatedFrame } from './lib/utils';
 import { generateZoomCenters } from './zoom-centers';
 
@@ -33,6 +35,8 @@ export default function App() {
   const [mouseClicks, setMouseClicks] = useState<TMouseClick[]>([]);
   const [finalFrameStates, setFinalFrameStates] = useState<FinalFrameState[]>([]);
   const [pixelsPerSecond, setPixelsPerSecond] = useState<number>(DEFAULT_PIXELS_PER_SECOND);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportProgress, setExportProgress] = useState<number>(0);
 
   useEffect(() => {
     if (wrapperRef.current) {
@@ -179,8 +183,62 @@ export default function App() {
     renderFrame();
   }
 
+  async function handleExport() {
+    if (
+      !videoDuration ||
+      isExporting ||
+      zoomSegments.length === 0 ||
+      mouseMoves.length === 0 ||
+      mouseClicks.length === 0
+    )
+      return;
+    setIsPlaying(false);
+
+    const filePath = await editorApi.openExportVideoDialog();
+    if (!filePath) return;
+
+    setIsExporting(true);
+    setExportProgress(0);
+
+    try {
+      await exportVideo(
+        filePath,
+        videoDuration,
+        zoomSegments,
+        mouseMoves,
+        mouseClicks,
+        (progress) => setExportProgress(progress),
+      );
+    } catch (err) {
+      console.error('Failed to process video output:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="flex flex-col w-screen h-screen bg-black text-white overflow-hidden">
+      {isExporting && (
+        <div className="absolute inset-0 z-100 bg-black/50 flex flex-col items-center justify-center backdrop-blur-lg transition-opacity">
+          <div className="text-neutral-200 text-3xl font-semibold mb-6">Rendering Export</div>
+          <div className="w-80 h-4 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
+            <div
+              className="h-full bg-violet-600 transition-all duration-300 ease-out"
+              style={{ width: `${exportProgress}%` }}
+            />
+          </div>
+          <div className="text-zinc-400 mt-3 font-semibold">{Math.floor(exportProgress)}%</div>
+        </div>
+      )}
+      <button
+        onClick={handleExport}
+        disabled={isExporting}
+        onFocus={(e) => e.currentTarget.blur()}
+        className="flex items-center justify-center gap-2 absolute top-4 right-4 z-40 bg-violet-700 text-white font-medium py-2 px-6 rounded-md hover:bg-violet-600 transition-all duration-300 ease-in-out disabled:opacity-50"
+      >
+        <ArrowUpFromLine size={18} />
+        Export
+      </button>
       <MainArea
         isPlaying={isPlaying}
         setIsPlaying={setIsPlaying}
