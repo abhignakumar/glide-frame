@@ -6,6 +6,7 @@ export const GET_MOUSE_MOVES = 'get-mouse-moves';
 export const GET_MOUSE_CLICKS = 'get-mouse-clicks';
 export const OPEN_EXPORT_VIDEO_DIALOG = 'open-export-video-dialog';
 export const START_EXPORT = 'start-export';
+export const UPDATE_PROJECT_DATA = 'update-project-data';
 
 export const GROUP_CLICKS_WITHIN_TIME_MS = 3000;
 

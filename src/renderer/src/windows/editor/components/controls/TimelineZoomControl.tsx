@@ -2,12 +2,12 @@ import { MAX_PIXELS_PER_SECOND, MIN_PIXELS_PER_SECOND } from '../../lib/config';
 
 interface TimelineZoomControlProps {
   pixelsPerSecond: number;
-  setPixelsPerSecond: React.Dispatch<React.SetStateAction<number>>;
+  handleSetPixelsPerSecond: (newPixelsPerSecond: number) => void;
 }
 
 export default function TimelineZoomControl({
   pixelsPerSecond,
-  setPixelsPerSecond,
+  handleSetPixelsPerSecond,
 }: TimelineZoomControlProps) {
   return (
     <div className="flex items-center gap-x-3">
@@ -18,7 +18,7 @@ export default function TimelineZoomControl({
         max={MAX_PIXELS_PER_SECOND}
         value={pixelsPerSecond}
         onFocus={(e) => e.currentTarget.blur()}
-        onChange={(e) => setPixelsPerSecond(Number(e.target.value))}
+        onChange={(e) => handleSetPixelsPerSecond(Number(e.target.value))}
         className="w-32 accent-white"
       />
     </div>

@@ -1,5 +1,5 @@
 import { ArrowUpFromLine } from 'lucide-react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 
 import { editorApi } from './api';
 import MainArea from './components/MainArea';
@@ -16,7 +16,7 @@ import { getInterpolatedFrame } from './lib/utils';
 import { generateZoomCenters } from './zoom-centers';
 
 import type { FinalFrameState } from './lib/types';
-import type { TMouseClick, TMouseMove, TZoomSegment } from 'src/preload';
+import type { TMouseClick, TMouseMove, TZoomSegment, TProjectData } from 'src/preload';
 
 export default function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -25,11 +25,14 @@ export default function App() {
   const animationFrameIdRef = useRef<number | null>(null);
   const transformContainerRef = useRef<HTMLDivElement | null>(null);
   const mouseRef = useRef<HTMLImageElement | null>(null);
+  const timelineContainerRef = useRef<HTMLDivElement | null>(null);
+  const timelineZoomStateRef = useRef<{ time: number; visualX: number } | null>(null);
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [previewScale, setPreviewScale] = useState<number | null>(null);
-  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
   const [videoSizing, setVideoSizing] = useState<{ width: string; height: string } | null>(null);
+  const [, setProjectData] = useState<TProjectData | null>(null);
   const [zoomSegments, setZoomSegments] = useState<TZoomSegment[]>([]);
   const [mouseMoves, setMouseMoves] = useState<TMouseMove[]>([]);
   const [mouseClicks, setMouseClicks] = useState<TMouseClick[]>([]);
@@ -45,6 +48,7 @@ export default function App() {
       setPreviewScale(scale);
     }
     void editorApi.getProjectData().then((projectData) => {
+      setProjectData(projectData);
       setZoomSegments(projectData.zoomSegments);
     });
     void editorApi.getMouseMoves().then((mouseMoves) => {
@@ -57,7 +61,7 @@ export default function App() {
 
   useEffect(() => {
     if (!videoRef.current || !videoRef.current.duration) return;
-    setVideoDuration(videoRef.current.duration);
+    setVideoDurationMs(videoRef.current.duration * 1000);
   }, [videoRef.current?.duration]);
 
   useEffect(() => {
@@ -65,7 +69,8 @@ export default function App() {
       !videoRef.current ||
       !videoRef.current.duration ||
       zoomSegments.length === 0 ||
-      mouseMoves.length === 0
+      mouseMoves.length === 0 ||
+      mouseClicks.length === 0
     )
       return;
     const width = videoRef.current.clientWidth;
@@ -151,20 +156,22 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!videoRef.current || !videoRef.current.duration) return;
-      e.preventDefault();
       if (e.key === ' ') {
+        e.preventDefault();
         setIsPlaying((prev) => !prev);
         return;
       }
       if (isPlaying) return;
 
       if (e.key === 'ArrowRight') {
+        e.preventDefault();
         videoRef.current.currentTime = Math.min(
           videoRef.current.duration,
           videoRef.current.currentTime + FRAME_DURATION_IN_SECONDS,
         );
         renderFrame();
       } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
         videoRef.current.currentTime = Math.max(
           0,
           videoRef.current.currentTime - FRAME_DURATION_IN_SECONDS,
@@ -178,14 +185,90 @@ export default function App() {
   }, [isPlaying, renderFrame]);
 
   function seekTo(timestampSeconds: number) {
-    if (!videoRef.current || !videoDuration) return;
-    videoRef.current.currentTime = Math.min(Math.max(0, timestampSeconds), videoDuration);
+    if (!videoRef.current || !videoRef.current.duration) return;
+    videoRef.current.currentTime = Math.min(
+      Math.max(0, timestampSeconds),
+      videoRef.current.duration,
+    );
     renderFrame();
   }
 
+  const handleUpdateZoomSegment = useCallback(
+    (id: string, startTimeMs: number, endTimeMs: number) => {
+      setZoomSegments((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, startTimeMs, endTimeMs } : s)),
+      );
+      setProjectData((prev) => {
+        if (!prev) return prev;
+        const updatedZoomSegments = prev.zoomSegments.map((s) =>
+          s.id === id ? { ...s, startTimeMs, endTimeMs } : s,
+        );
+        const updatedProjectData = { ...prev, zoomSegments: updatedZoomSegments };
+        void editorApi.updateProjectData(updatedProjectData);
+        return updatedProjectData;
+      });
+    },
+    [],
+  );
+
+  const handleAddZoomSegment = useCallback((startTimeMs: number, endTimeMs: number) => {
+    const newSegment: TZoomSegment = {
+      id: crypto.randomUUID(),
+      startTimeMs,
+      endTimeMs,
+      scale: 2,
+    };
+    setProjectData((prev) => {
+      if (!prev) return prev;
+      const updatedZoomSegments = [...prev.zoomSegments, newSegment].sort(
+        (a, b) => a.startTimeMs - b.startTimeMs,
+      );
+      const updatedProjectData = { ...prev, zoomSegments: updatedZoomSegments };
+      void editorApi.updateProjectData(updatedProjectData);
+      return updatedProjectData;
+    });
+    setZoomSegments((prev) => [...prev, newSegment].sort((a, b) => a.startTimeMs - b.startTimeMs));
+  }, []);
+
+  const handleDeleteZoomSegment = useCallback((id: string) => {
+    setProjectData((prev) => {
+      if (!prev) return prev;
+      const updatedZoomSegments = prev.zoomSegments.filter((s) => s.id !== id);
+      const updatedProjectData = { ...prev, zoomSegments: updatedZoomSegments };
+      void editorApi.updateProjectData(updatedProjectData);
+      return updatedProjectData;
+    });
+    setZoomSegments((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const handleSetPixelsPerSecond = (newPixelsPerSecond: number) => {
+    if (pixelsPerSecond === newPixelsPerSecond) return;
+    const video = videoRef.current;
+    const scroll = timelineContainerRef.current;
+    if (!video || !scroll) {
+      setPixelsPerSecond(newPixelsPerSecond);
+      return;
+    }
+    if (!timelineZoomStateRef.current) {
+      const time = video.currentTime;
+      const visualX = time * pixelsPerSecond - scroll.scrollLeft;
+      timelineZoomStateRef.current = { time, visualX };
+    }
+    setPixelsPerSecond(newPixelsPerSecond);
+  };
+
+  useLayoutEffect(() => {
+    if (timelineZoomStateRef.current && timelineContainerRef.current) {
+      const { time, visualX } = timelineZoomStateRef.current;
+      const newScrollLeft = time * pixelsPerSecond - visualX;
+      timelineContainerRef.current.scrollLeft = newScrollLeft;
+      timelineZoomStateRef.current = null;
+    }
+  }, [pixelsPerSecond]);
+
   async function handleExport() {
     if (
-      !videoDuration ||
+      !videoDurationMs ||
       isExporting ||
       zoomSegments.length === 0 ||
       mouseMoves.length === 0 ||
@@ -203,7 +286,7 @@ export default function App() {
     try {
       await exportVideo(
         filePath,
-        videoDuration,
+        videoDurationMs,
         zoomSegments,
         mouseMoves,
         mouseClicks,
@@ -245,7 +328,7 @@ export default function App() {
         renderFrame={renderFrame}
         videoRef={videoRef}
         pixelsPerSecond={pixelsPerSecond}
-        setPixelsPerSecond={setPixelsPerSecond}
+        handleSetPixelsPerSecond={handleSetPixelsPerSecond}
         previewScale={previewScale}
         setVideoSizing={setVideoSizing}
         videoSizing={videoSizing}
@@ -254,11 +337,15 @@ export default function App() {
         mouseRef={mouseRef}
       />
       <TimelineContainer
-        videoDuration={videoDuration}
+        videoDurationMs={videoDurationMs}
         pixelsPerSecond={pixelsPerSecond}
         zoomSegments={zoomSegments}
         scrubberRef={scrubberRef}
         seekTo={seekTo}
+        onUpdateZoomSegment={handleUpdateZoomSegment}
+        onAddZoomSegment={handleAddZoomSegment}
+        onDeleteZoomSegment={handleDeleteZoomSegment}
+        timelineContainerRef={timelineContainerRef}
       />
     </div>
   );

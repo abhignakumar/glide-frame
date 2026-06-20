@@ -7,7 +7,7 @@ interface ControlsProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   renderFrame: () => void;
   pixelsPerSecond: number;
-  setPixelsPerSecond: React.Dispatch<React.SetStateAction<number>>;
+  handleSetPixelsPerSecond: (newPixelsPerSecond: number) => void;
 }
 
 export default function Controls({
@@ -16,7 +16,7 @@ export default function Controls({
   videoRef,
   renderFrame,
   pixelsPerSecond,
-  setPixelsPerSecond,
+  handleSetPixelsPerSecond,
 }: ControlsProps) {
   return (
     <div className="h-16 flex items-center px-6 w-full shrink-0 border-t border-neutral-800">
@@ -30,7 +30,7 @@ export default function Controls({
       <div className="flex-1 flex items-center justify-end">
         <TimelineZoomControl
           pixelsPerSecond={pixelsPerSecond}
-          setPixelsPerSecond={setPixelsPerSecond}
+          handleSetPixelsPerSecond={handleSetPixelsPerSecond}
         />
       </div>
     </div>

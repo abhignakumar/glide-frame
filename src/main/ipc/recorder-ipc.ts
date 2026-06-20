@@ -102,7 +102,7 @@ export function handleListDisplaySources(event: IpcMainInvokeEvent) {
                 const mouseClicks = JSON.parse(mouseClicksFileData) as MouseClick[];
                 const zoomSegments = generateZoomSegments(mouseClicks);
                 const projectData = {
-                  id: crypto.randomBytes(6).toString('base64url'),
+                  id: crypto.randomUUID(),
                   createdAt: new Date().toISOString(),
                   zoomSegments: zoomSegments,
                 };
@@ -185,7 +185,7 @@ function generateZoomSegments(mouseClicks: MouseClick[]): ZoomSegment[] {
 
   for (let i = 0; i < mouseClicks.length - 2; i++) {
     tempZoomSegment ??= {
-      id: crypto.randomBytes(6).toString('base64url'),
+      id: crypto.randomUUID(),
       startTimeMs: Math.max(0, mouseClicks[i].processTimeMs - zoomTransitionTimeMs),
       endTimeMs: 0,
       scale: 2,

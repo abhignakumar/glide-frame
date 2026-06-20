@@ -19,4 +19,5 @@ export interface EditorAPI {
   getProjectDir: () => string;
   getVideoSrcUrl: () => string;
   openExportVideoDialog: () => Promise<string | null>;
+  updateProjectData: (projectData: ProjectData) => Promise<void>;
 }

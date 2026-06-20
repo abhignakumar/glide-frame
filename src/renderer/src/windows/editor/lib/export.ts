@@ -25,7 +25,7 @@ import type { TMouseClick, TMouseMove, TZoomSegment } from 'src/preload';
 
 export async function exportVideo(
   filePath: string,
-  durationSeconds: number,
+  videoDurationMs: number,
   zoomSegments: TZoomSegment[],
   mouseMoves: TMouseMove[],
   mouseClicks: TMouseClick[],
@@ -197,7 +197,7 @@ export async function exportVideo(
     );
 
     const exportFinalFrameStates = computeFinalFrameStates(
-      durationSeconds * 1000,
+      videoDurationMs,
       { width: targetW, height: targetH },
       zoomSegments,
       zoomCenters,
@@ -226,7 +226,7 @@ export async function exportVideo(
       videoFrame.close();
       sample.close();
 
-      while (outputTime < sampleEndTime && outputTime <= durationSeconds) {
+      while (outputTime < sampleEndTime && outputTime <= videoDurationMs / 1000) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (streamState.error) throw new Error(streamState.error);
 
@@ -260,12 +260,12 @@ export async function exportVideo(
 
         outputTime += dt;
         if (onProgress) {
-          onProgress(Math.min(100, (outputTime / durationSeconds) * 100));
+          onProgress(Math.min(100, (outputTime / (videoDurationMs / 1000)) * 100));
         }
       }
     }
 
-    while (outputTime <= durationSeconds) {
+    while (outputTime <= videoDurationMs / 1000) {
       if (streamState.error) throw streamState.error;
       const frameData = getInterpolatedFrame(outputTime * 1000, exportFinalFrameStates);
 
@@ -297,7 +297,7 @@ export async function exportVideo(
 
       outputTime += dt;
       if (onProgress) {
-        onProgress(Math.min(100, (outputTime / durationSeconds) * 100));
+        onProgress(Math.min(100, (outputTime / (videoDurationMs / 1000)) * 100));
       }
     }
 

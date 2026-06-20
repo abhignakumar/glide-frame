@@ -14,6 +14,7 @@ import {
   OPEN_EXPORT_VIDEO_DIALOG,
   START_EXPORT,
   STOP_RECORDING,
+  UPDATE_PROJECT_DATA,
 } from '../lib/constants';
 
 import type { MouseClick, MouseMove, ProjectData } from '../lib/types/types';
@@ -76,4 +77,15 @@ function setupEditorIpc(): void {
     const { filePath } = args as { filePath: string };
     handleStartExport(event, filePath);
   });
+
+  ipcMain.handle(
+    UPDATE_PROJECT_DATA,
+    (_event, projectDir: string, projectData: ProjectData): void => {
+      fs.writeFileSync(
+        path.join(projectDir, 'project.json'),
+        JSON.stringify(projectData, null, 2),
+        'utf-8',
+      );
+    },
+  );
 }

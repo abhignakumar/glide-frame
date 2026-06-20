@@ -6,6 +6,7 @@ import {
   GET_PROJECT_DATA,
   START_EXPORT,
   OPEN_EXPORT_VIDEO_DIALOG,
+  UPDATE_PROJECT_DATA,
 } from '../main/lib/constants';
 
 import type { EditorAPI } from '../main/lib/types/ipc-api';
@@ -40,6 +41,8 @@ if (process.contextIsolated) {
         };
         return filePath;
       },
+      updateProjectData: (projectData) =>
+        ipcRenderer.invoke(UPDATE_PROJECT_DATA, projectDir, projectData),
     } satisfies EditorAPI);
   } catch (error) {
     console.error(error);

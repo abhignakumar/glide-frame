@@ -1,41 +1,43 @@
 import TimelineRow from './TimelineRow';
-import TimelineRowItem from './TimelineRowItem';
+import VideoClipRowItem from './VideoClipRowItem';
+import ZoomTimelineRow from './ZoomTimelineRow';
 
 import type { TZoomSegment } from 'src/preload';
 
 interface TimelineAllRowsProps {
-  videoDuration: number;
+  videoDurationMs: number;
   pixelsPerSecond: number;
   zoomSegments: TZoomSegment[];
+  onUpdateZoomSegment: (id: string, startTimeMs: number, endTimeMs: number) => void;
+  onAddZoomSegment: (startTimeMs: number, endTimeMs: number) => void;
+  onDeleteZoomSegment: (id: string) => void;
 }
 
 export default function TimelineAllRows({
-  videoDuration,
+  videoDurationMs,
   pixelsPerSecond,
   zoomSegments,
+  onUpdateZoomSegment,
+  onAddZoomSegment,
+  onDeleteZoomSegment,
 }: TimelineAllRowsProps) {
   return (
     <div className="w-full flex flex-col py-3 gap-y-3">
       <TimelineRow>
-        <TimelineRowItem
+        <VideoClipRowItem
           startTimeMs={0}
-          endTimeMs={videoDuration * 1000}
+          endTimeMs={videoDurationMs}
           pixelsPerSecond={pixelsPerSecond}
-          colorClass="bg-yellow-600"
         />
       </TimelineRow>
-
-      <TimelineRow>
-        {zoomSegments.map((segment) => (
-          <TimelineRowItem
-            key={segment.id}
-            startTimeMs={segment.startTimeMs}
-            endTimeMs={segment.endTimeMs}
-            pixelsPerSecond={pixelsPerSecond}
-            colorClass="bg-violet-600"
-          />
-        ))}
-      </TimelineRow>
+      <ZoomTimelineRow
+        videoDurationMs={videoDurationMs}
+        zoomSegments={zoomSegments}
+        pixelsPerSecond={pixelsPerSecond}
+        onAddZoomSegment={onAddZoomSegment}
+        onDeleteZoomSegment={onDeleteZoomSegment}
+        onUpdateZoomSegment={onUpdateZoomSegment}
+      />
     </div>
   );
 }

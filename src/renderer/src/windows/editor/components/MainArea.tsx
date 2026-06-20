@@ -7,7 +7,7 @@ interface MainAreaProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   renderFrame: () => void;
   pixelsPerSecond: number;
-  setPixelsPerSecond: React.Dispatch<React.SetStateAction<number>>;
+  handleSetPixelsPerSecond: (newPixelsPerSecond: number) => void;
   previewScale: number | null;
   videoSizing: { width: string; height: string } | null;
   setVideoSizing: React.Dispatch<React.SetStateAction<{ width: string; height: string } | null>>;
@@ -22,7 +22,7 @@ export default function MainArea({
   videoRef,
   renderFrame,
   pixelsPerSecond,
-  setPixelsPerSecond,
+  handleSetPixelsPerSecond,
   previewScale,
   setVideoSizing,
   videoSizing,
@@ -48,7 +48,7 @@ export default function MainArea({
           videoRef={videoRef}
           renderFrame={renderFrame}
           pixelsPerSecond={pixelsPerSecond}
-          setPixelsPerSecond={setPixelsPerSecond}
+          handleSetPixelsPerSecond={handleSetPixelsPerSecond}
         />
       </div>
     </div>
