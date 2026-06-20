@@ -50,6 +50,8 @@ if (process.contextIsolated) {
 
   window.addEventListener('message', (event) => {
     if (event.source !== window) return;
+    if (event.origin !== window.location.origin) return;
+    if (!event.data || typeof event.data !== 'object') return;
     const { type, filePath } = event.data as { type: string; filePath: string };
     if (type === 'INIT_EXPORT_STREAM') {
       const port = event.ports.length > 0 ? event.ports[0] : null;

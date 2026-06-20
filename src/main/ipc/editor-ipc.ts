@@ -56,6 +56,11 @@ export function handleStartExport(event: IpcMainEvent, filePath: string) {
         fs.writeSync(fd, chunk, 0, chunk.length, position ?? null);
       } catch (err) {
         console.error('[Export] File write error:', err);
+        try {
+          fs.closeSync(fd);
+        } catch (err) {
+          console.error('[Export] File close error:', err);
+        }
         port.postMessage({ type: 'error', message: JSON.stringify(err) });
         port.close();
         return;

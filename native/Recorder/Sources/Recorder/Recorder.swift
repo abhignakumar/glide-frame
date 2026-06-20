@@ -502,8 +502,8 @@ final class MouseTracker: @unchecked Sendable {
         // 3. SCALE TO PIXELS: Multiply by the display's internal pixel density
         // We use string formatting to cap precision at 2 decimal places to keep the JSON size lean
         // while allowing sub-pixel smooth rendering if your downstream renderer supports it.
-        let pixelX = String(format: "%.2f", localXPoints * scaleFactor)
-        let pixelY = String(format: "%.2f", localYPoints * scaleFactor)
+        let pixelX = (localXPoints * scaleFactor * 100).rounded() / 100
+        let pixelY = (localYPoints * scaleFactor * 100).rounded() / 100
         
         // event.timestamp is Mach absolute time in nanoseconds
         let eventHostSeconds = Double(event.timestamp) / 1_000_000_000.0

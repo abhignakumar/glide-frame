@@ -2,6 +2,7 @@ import { optimizer } from '@electron-toolkit/utils';
 import { app, dialog, systemPreferences, shell, BrowserWindow } from 'electron';
 
 import { setupIpc } from './ipc/ipc';
+import { stopRecordingProcess } from './ipc/recorder-ipc';
 import { stopVideoServer } from './video-server';
 import { createRecorderWindow } from './windows';
 
@@ -57,5 +58,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', () => {
+  stopRecordingProcess(true);
   stopVideoServer();
 });

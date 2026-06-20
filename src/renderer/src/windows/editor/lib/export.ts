@@ -33,7 +33,7 @@ export async function exportVideo(
 ): Promise<void> {
   const { port1, port2 } = new MessageChannel();
   const streamPort = port1;
-  window.postMessage({ type: 'INIT_EXPORT_STREAM', filePath }, '*', [port2]);
+  window.postMessage({ type: 'INIT_EXPORT_STREAM', filePath }, window.location.origin, [port2]);
 
   const streamState: { error: Error | null } = { error: null };
   streamPort.onmessage = (event) => {

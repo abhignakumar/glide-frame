@@ -30,7 +30,7 @@ export default function TimelineContainer({
       className="h-full overflow-x-scroll overflow-y-hidden px-4 scrollbar-none border-t border-neutral-800"
       ref={timelineContainerRef}
     >
-      {videoDurationMs && zoomSegments.length >= 0 && (
+      {videoDurationMs !== null && zoomSegments.length >= 0 && (
         <Timeline
           videoDurationMs={videoDurationMs}
           pixelsPerSecond={pixelsPerSecond}

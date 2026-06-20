@@ -27,7 +27,7 @@ export default function PlaybackControls({
   function handleLastFrameButton() {
     if (!videoRef.current || !videoRef.current.duration) return;
     setIsPlaying(false);
-    videoRef.current.currentTime = Math.max(0, videoRef.current.duration);
+    videoRef.current.currentTime = Math.max(0, videoRef.current.duration - 0.001);
     renderFrame();
   }
 

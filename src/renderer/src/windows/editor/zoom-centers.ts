@@ -18,6 +18,7 @@ export function generateZoomCenters(
       currentZoomSegment,
       mouseMoves,
     );
+    if (currentZoomSegmentMouseMoves.length === 0) continue;
     const clampedXY = clampXAndYZoomCenter(
       currentZoomSegmentMouseMoves[0].x * currentZoomSegment.scale,
       currentZoomSegmentMouseMoves[0].y * currentZoomSegment.scale,
@@ -48,21 +49,19 @@ export function generateZoomCenters(
     };
     for (let j = 0; j < currentZoomSegmentMouseMoves.length - 1; j++) {
       const currentZoomSegmentMouseMove = currentZoomSegmentMouseMoves[j];
-      currentZoomSegmentMouseMove.x *= currentZoomSegment.scale;
-      currentZoomSegmentMouseMove.y *= currentZoomSegment.scale;
+      const scaledX = currentZoomSegmentMouseMove.x * currentZoomSegment.scale;
+      const scaledY = currentZoomSegmentMouseMove.y * currentZoomSegment.scale;
       if (
-        currentZoomSegmentMouseMove.x >= currentZoomedSafeZoneTopLeft.x &&
-        currentZoomSegmentMouseMove.x <=
-          currentZoomedSafeZoneTopLeft.x + zoomedSafeZoneDimensions.width &&
-        currentZoomSegmentMouseMove.y >= currentZoomedSafeZoneTopLeft.y &&
-        currentZoomSegmentMouseMove.y <=
-          currentZoomedSafeZoneTopLeft.y + zoomedSafeZoneDimensions.height
+        scaledX >= currentZoomedSafeZoneTopLeft.x &&
+        scaledX <= currentZoomedSafeZoneTopLeft.x + zoomedSafeZoneDimensions.width &&
+        scaledY >= currentZoomedSafeZoneTopLeft.y &&
+        scaledY <= currentZoomedSafeZoneTopLeft.y + zoomedSafeZoneDimensions.height
       ) {
         continue;
       }
       const tempClampedXY = clampXAndYZoomCenter(
-        currentZoomSegmentMouseMove.x,
-        currentZoomSegmentMouseMove.y,
+        scaledX,
+        scaledY,
         {
           width: videoDimensions.width * currentZoomSegment.scale,
           height: videoDimensions.height * currentZoomSegment.scale,

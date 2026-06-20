@@ -33,6 +33,7 @@ function setupRecorderIpc(): void {
 
   ipcMain.handle(LIST_DISPLAY_SOURCES, (event) => {
     handleListDisplaySources(event);
+    return;
   });
 }
 

@@ -158,48 +158,52 @@ function getRecorderCliPath(): string {
   return path.join(app.getAppPath(), 'native', 'Recorder', '.build', 'release', 'Recorder');
 }
 
-export function stopRecordingProcess(): void {
+export function stopRecordingProcess(forceKill = false): void {
   if (
     activeRecordingProcess &&
-    activeRecordingProcess.stdin &&
     activeRecordingProcess.exitCode === null &&
-    activeRecordingProcess.signalCode === null &&
     !activeRecordingProcess.killed
   ) {
-    console.log('Sending stop signal to Recorder CLI...');
-    try {
-      activeRecordingProcess.stdin.write('\n');
-    } catch (err) {
-      console.warn('[Recorder stdin] Synchronous write error:', err);
+    if (forceKill) {
+      activeRecordingProcess.kill('SIGKILL');
+    } else if (activeRecordingProcess.stdin) {
+      try {
+        activeRecordingProcess.stdin.write('\n');
+      } catch (err) {
+        console.warn('[Recorder stdin] error:', err);
+      }
     }
   }
 }
 
 function generateZoomSegments(mouseClicks: MouseClick[]): ZoomSegment[] {
+  const filteredMouseClicks = mouseClicks.filter((click) => click.type === 'mouseDown');
   const zoomSegments: ZoomSegment[] = [];
   let tempZoomSegment: ZoomSegment | null = null;
   const zoomTransitionTimeMs = calculateSpringSettlingDurationMs(
     DEFAULT_ALL_SPRING_CONFIGS.screenMovement,
   );
-  const approximateVideoEndTimeMs = mouseClicks[mouseClicks.length - 1].processTimeMs;
+  const approximateVideoEndTimeMs =
+    filteredMouseClicks[filteredMouseClicks.length - 1].processTimeMs;
 
-  for (let i = 0; i < mouseClicks.length - 2; i++) {
+  for (let i = 0; i < filteredMouseClicks.length - 1; i++) {
     tempZoomSegment ??= {
       id: crypto.randomUUID(),
-      startTimeMs: Math.max(0, mouseClicks[i].processTimeMs - zoomTransitionTimeMs),
+      startTimeMs: Math.max(0, filteredMouseClicks[i].processTimeMs - zoomTransitionTimeMs),
       endTimeMs: 0,
       scale: 2,
     };
     if (
-      i + 1 >= mouseClicks.length - 2 ||
-      (mouseClicks[i + 1].processTimeMs - mouseClicks[i].processTimeMs >
+      i + 1 >= filteredMouseClicks.length - 1 ||
+      (filteredMouseClicks[i + 1].processTimeMs - filteredMouseClicks[i].processTimeMs >
         GROUP_CLICKS_WITHIN_TIME_MS &&
-        mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS + zoomTransitionTimeMs <
-          mouseClicks[i + 1].processTimeMs - zoomTransitionTimeMs)
+        filteredMouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS + zoomTransitionTimeMs <
+          filteredMouseClicks[i + 1].processTimeMs - zoomTransitionTimeMs)
     ) {
       tempZoomSegment.endTimeMs =
-        mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS < approximateVideoEndTimeMs
-          ? mouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS
+        filteredMouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS <
+        approximateVideoEndTimeMs
+          ? filteredMouseClicks[i].processTimeMs + GROUP_CLICKS_WITHIN_TIME_MS
           : approximateVideoEndTimeMs - 1000;
       zoomSegments.push(tempZoomSegment);
       tempZoomSegment = null;

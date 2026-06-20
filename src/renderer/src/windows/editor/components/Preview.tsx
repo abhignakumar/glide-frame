@@ -68,7 +68,7 @@ export default function Preview({
           ref={mouseRef}
           src={mousePng}
           alt="Cursor"
-          className={`absolute top-0 left-0 pointer-events-none h-auto drop-shadow-black drop-shadow-2xl`}
+          className={`absolute top-0 left-0 pointer-events-none h-auto drop-shadow-black/30 drop-shadow-xl`}
           style={{
             willChange: 'transform',
             width: `${MOUSE_ARROW_DATA.standardSize.width * MOUSE_SIZE_TIMES}px`,

@@ -1,8 +1,11 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 import cors from 'cors';
 import express from 'express';
+
+import { DEFAULT_PROJECTS_ROOT_DIR } from './lib/config';
 
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
@@ -10,11 +13,18 @@ import type { AddressInfo } from 'net';
 let serverInstance: Server | null = null;
 let allocatedPort: number = 0;
 
+let activeConnections = 0;
+
 /**
  * Initializes a strictly local Express server supporting native HTTP Range requests.
  * Uses a random unassigned system port to eliminate port conflict crashes.
  */
 export function startVideoServer(): Promise<number> {
+  if (serverInstance) {
+    activeConnections++;
+    return Promise.resolve(allocatedPort);
+  }
+  activeConnections = 1;
   return new Promise((resolve, reject) => {
     const app = express();
     app.use(cors());
@@ -31,6 +41,14 @@ export function startVideoServer(): Promise<number> {
       try {
         const decodedPath = decodeURIComponent(rawPath);
         const normalizedPath = path.normalize(decodedPath);
+        const resolvedRootDir = path.normalize(
+          DEFAULT_PROJECTS_ROOT_DIR.replace(/^~/, os.homedir()),
+        );
+
+        if (!normalizedPath.startsWith(resolvedRootDir)) {
+          res.status(403).send('Forbidden: Invalid file path');
+          return;
+        }
 
         // Prevent Directory Traversal / File Access Auditing
         if (!fs.existsSync(normalizedPath) || !fs.lstatSync(normalizedPath).isFile()) {
@@ -71,10 +89,12 @@ export function startVideoServer(): Promise<number> {
 }
 
 export function stopVideoServer(): void {
-  if (serverInstance) {
+  activeConnections--;
+  if (activeConnections <= 0 && serverInstance) {
     serverInstance.close();
     console.log('[Production Video Server] Terminated.');
     serverInstance = null;
     allocatedPort = 0;
+    activeConnections = 0;
   }
 }
