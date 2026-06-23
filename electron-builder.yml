@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: open-studio
+appId: com.abhigna.glideframe
+productName: Glide Frame
 directories:
   buildResources: build
 files:
@@ -12,12 +12,15 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: open-studio
+  executableName: glide-frame
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+extraResources:
+  - from: native/Recorder/.build/release/Recorder
+    to: Recorder
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -25,6 +28,8 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    - NSScreenCaptureUsageDescription: Application requests access to the device's screen.
+    - NSInputMonitoringUsageDescription: Application requests permission to monitor input events for global mouse and keyboard tracking.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
@@ -38,6 +43,3 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

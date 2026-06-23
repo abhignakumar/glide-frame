@@ -15,17 +15,20 @@ let allocatedPort: number = 0;
 
 let activeConnections = 0;
 
+let serverStarting: Promise<number> | null = null;
+
 /**
  * Initializes a strictly local Express server supporting native HTTP Range requests.
  * Uses a random unassigned system port to eliminate port conflict crashes.
  */
 export function startVideoServer(): Promise<number> {
+  if (serverStarting) return serverStarting;
   if (serverInstance) {
     activeConnections++;
     return Promise.resolve(allocatedPort);
   }
   activeConnections = 1;
-  return new Promise((resolve, reject) => {
+  serverStarting = new Promise((resolve, reject) => {
     const app = express();
     app.use(cors());
 
@@ -44,8 +47,10 @@ export function startVideoServer(): Promise<number> {
         const resolvedRootDir = path.normalize(
           DEFAULT_PROJECTS_ROOT_DIR.replace(/^~/, os.homedir()),
         );
+        const absoluteVideoPath = path.resolve(normalizedPath);
+        const relativePath = path.relative(resolvedRootDir, absoluteVideoPath);
 
-        if (!normalizedPath.startsWith(resolvedRootDir)) {
+        if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
           res.status(403).send('Forbidden: Invalid file path');
           return;
         }
@@ -78,20 +83,27 @@ export function startVideoServer(): Promise<number> {
       const address = serverInstance?.address() as AddressInfo;
       allocatedPort = address.port;
       console.log(`[Production Video Server] Initialized on http://127.0.0.1:${allocatedPort}`);
+      serverStarting = null;
       resolve(allocatedPort);
     });
 
     serverInstance.on('error', (err) => {
       console.error('[Production Video Server] Execution Failed:', err);
+      serverStarting = null;
       reject(err);
     });
   });
+  return serverStarting;
 }
 
 export function stopVideoServer(): void {
-  activeConnections--;
+  if (activeConnections > 0) {
+    activeConnections--;
+  }
   if (activeConnections <= 0 && serverInstance) {
-    serverInstance.close();
+    serverInstance.close((err) => {
+      if (err) console.error('[Production Video Server] Close error:', err);
+    });
     console.log('[Production Video Server] Terminated.');
     serverInstance = null;
     allocatedPort = 0;

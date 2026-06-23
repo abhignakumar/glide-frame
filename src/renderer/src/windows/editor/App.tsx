@@ -302,7 +302,7 @@ export default function App() {
   return (
     <div className="flex flex-col w-screen h-screen bg-black text-white overflow-hidden">
       {isExporting && (
-        <div className="absolute inset-0 z-100 bg-black/50 flex flex-col items-center justify-center backdrop-blur-lg transition-opacity">
+        <div className="absolute inset-0 z-100 bg-black/80 flex flex-col items-center justify-center backdrop-blur-lg transition-opacity">
           <div className="text-neutral-200 text-3xl font-semibold mb-6">Rendering Export</div>
           <div className="w-80 h-4 bg-zinc-800 rounded-full overflow-hidden shadow-inner">
             <div
