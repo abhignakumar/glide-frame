@@ -57,7 +57,7 @@ No subscriptions. No watermarks. No cloud upload. Everything happens locally on 
 ### Product Demo Video
 
 <div align="center">
-  <a href="https://drive.google.com/file/d/1-T5gCvB429mEb4IZILYc8wSkewJ0OnSN/view?usp=sharing">
+  <a href="https://streamable.com/4js9vw" target="_blank">
     <img
       src="docs/assets/Thumbnail-ProductDemoVideo.png"
       alt="Product Demo Video Thumbnail"
@@ -71,7 +71,7 @@ No subscriptions. No watermarks. No cloud upload. Everything happens locally on 
 Here's an example of a raw recording exported straight out of Glide Frame, zoom, pan and cursor animations included:
 
 <div align="center">
-  <a href="https://drive.google.com/file/d/1JadGD8Wg7TS0HvGsHi8eQQ-OE3MHNsN_/view?usp=sharing">
+  <a href="https://streamable.com/52fjua" target="_blank">
     <img
       src="docs/assets/Thumbnail-SampleExportedVideo.png"
       alt="Sample Exported Video Thumbnail"
