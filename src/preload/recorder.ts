@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 import { CLOSE_CURRENT_WINDOW, LIST_DISPLAY_SOURCES } from '../main/lib/constants';
 
-import type { RecorderAPI } from '../main/lib/types';
+import type { RecorderAPI } from '../main/lib/types/ipc-api';
 
 if (process.contextIsolated) {
   try {

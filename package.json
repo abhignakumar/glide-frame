@@ -1,10 +1,15 @@
 {
-  "name": "open-studio",
+  "name": "glide-frame",
+  "productName": "Glide Frame",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Create beautiful screen recordings with very smooth animations.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "Abhigna Kumar Vaddepally",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abhignakumar/glide-frame"
+  },
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -19,23 +24,31 @@
     "dev:watch": "electron-vite dev --watch",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
+    "build:swift": "cd native/Recorder && swift build -c release",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:mac": "npm run build:swift && electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.3.0",
+    "cors": "^2.8.6",
     "electron-updater": "^6.3.9",
+    "express": "^5.2.1",
     "lucide-react": "^1.16.0",
+    "mediabunny": "^1.48.0",
+    "node-mac-permissions": "^2.5.0",
+    "pixi.js": "^8.19.0",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

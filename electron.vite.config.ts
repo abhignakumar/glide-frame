@@ -13,6 +13,7 @@ export default defineConfig({
         input: {
           recorder: resolve(__dirname, 'src/preload/recorder.ts'),
           'stop-recorder': resolve(__dirname, 'src/preload/stop-recorder.ts'),
+          editor: resolve(__dirname, 'src/preload/editor.ts'),
         },
       },
     },
@@ -29,6 +30,7 @@ export default defineConfig({
         input: {
           recorder: resolve(__dirname, 'src/renderer/recorder.html'),
           'stop-recorder': resolve(__dirname, 'src/renderer/stop-recorder.html'),
+          editor: resolve(__dirname, 'src/renderer/editor.html'),
         },
       },
     },

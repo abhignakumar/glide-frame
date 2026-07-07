@@ -190,8 +190,11 @@ class Recorder: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable 
         
         let movesURL = outputDirURL.appendingPathComponent("mouse-moves.json")
         let clicksURL = outputDirURL.appendingPathComponent("mouse-clicks.json")
+
+        let filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+        let scaleFactor = CGFloat(filter.pointPixelScale)
         
-        self.mouseTracker = try MouseTracker(movesURL: movesURL, clicksURL: clicksURL)
+        self.mouseTracker = try MouseTracker(movesURL: movesURL, clicksURL: clicksURL, displayFrame: display.frame, scaleFactor: scaleFactor)
     }
     
     func start() async throws {
@@ -207,7 +210,7 @@ class Recorder: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable 
         // Strict 60 FPS Cap
         config.minimumFrameInterval = CMTime(value: 1, timescale: 60)
         config.queueDepth = 5
-        config.showsCursor = true
+        config.showsCursor = false
         config.captureResolution = .best // Requires macOS 14.0
         
         // AVAssetWriter Setup (H.264 | 60 FPS)
@@ -339,7 +342,7 @@ class Recorder: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable 
                     let metadataURL = self.metadataURL
                     
                     DispatchQueue.global(qos: .background).async {
-                        let json = "{\n  \"unixTimeMs\": \(baseUnixTimeMs)\n}\n"
+                        let json = "{\n  \"recordingStartUnixTimeMs\": \(baseUnixTimeMs)\n}\n"
                         do {
                             try json.write(to: metadataURL, atomically: true, encoding: .utf8)
                         } catch {
@@ -369,6 +372,8 @@ class Recorder: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable 
 final class MouseTracker: @unchecked Sendable {
     let movesWriter: JSONStreamWriter
     let clicksWriter: JSONStreamWriter
+    let displayFrame: CGRect
+    let scaleFactor: CGFloat
 
     private var baseHostTimeSeconds: Double = 0
     private var baseUnixTimeMs: Double = 0
@@ -394,9 +399,11 @@ final class MouseTracker: @unchecked Sendable {
         }
     }
     
-    init(movesURL: URL, clicksURL: URL) throws {
+    init(movesURL: URL, clicksURL: URL, displayFrame: CGRect, scaleFactor: CGFloat) throws {
         self.movesWriter = try JSONStreamWriter(url: movesURL, label: "com.recorder.movesWriter")
         self.clicksWriter = try JSONStreamWriter(url: clicksURL, label: "com.recorder.clicksWriter")
+        self.displayFrame = displayFrame
+        self.scaleFactor = scaleFactor
     }
 
     func setBaseTimes(hostTimeSeconds: Double, unixTimeMs: Double) {
@@ -483,7 +490,20 @@ final class MouseTracker: @unchecked Sendable {
     private func handle(event: CGEvent, type: CGEventType) {
         guard isCapturing else { return }
         
-        let loc = event.location
+        let globalLoc = event.location
+
+        // 1. BOUNDS CHECK: Ignore events outside the target display
+        guard displayFrame.contains(globalLoc) else { return }
+        
+        // 2. LOCALIZE: Convert to 0,0 based coordinates for this specific display
+        let localXPoints = globalLoc.x - displayFrame.origin.x
+        let localYPoints = globalLoc.y - displayFrame.origin.y
+
+        // 3. SCALE TO PIXELS: Multiply by the display's internal pixel density
+        // We use string formatting to cap precision at 2 decimal places to keep the JSON size lean
+        // while allowing sub-pixel smooth rendering if your downstream renderer supports it.
+        let pixelX = (localXPoints * scaleFactor * 100).rounded() / 100
+        let pixelY = (localYPoints * scaleFactor * 100).rounded() / 100
         
         // event.timestamp is Mach absolute time in nanoseconds
         let eventHostSeconds = Double(event.timestamp) / 1_000_000_000.0
@@ -492,7 +512,7 @@ final class MouseTracker: @unchecked Sendable {
         
         switch type {
         case .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
-            let json = "{\"x\":\(loc.x),\"y\":\(loc.y),\"unixTimeMs\":\(unixTimeMs),\"processTimeMs\":\(processTimeMs)}"
+            let json = "{\"x\":\(pixelX),\"y\":\(pixelY),\"unixTimeMs\":\(unixTimeMs),\"processTimeMs\":\(processTimeMs)}"
             movesWriter.append(json)
             
         case .leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp:
@@ -509,7 +529,7 @@ final class MouseTracker: @unchecked Sendable {
             default: return
             }
             
-            let json = "{\"x\":\(loc.x),\"y\":\(loc.y),\"type\":\"\(action)\",\"button\":\"\(button)\",\"unixTimeMs\":\(unixTimeMs),\"processTimeMs\":\(processTimeMs)}"
+            let json = "{\"x\":\(pixelX),\"y\":\(pixelY),\"type\":\"\(action)\",\"button\":\"\(button)\",\"unixTimeMs\":\(unixTimeMs),\"processTimeMs\":\(processTimeMs)}"
             clicksWriter.append(json)
             
         default:

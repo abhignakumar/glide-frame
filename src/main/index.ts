@@ -1,11 +1,13 @@
 import { optimizer } from '@electron-toolkit/utils';
-import { app, dialog, systemPreferences, shell, BrowserWindow } from 'electron';
+import { app, dialog, BrowserWindow } from 'electron';
+import permissions from 'node-mac-permissions';
 
-import { setupRecorderIpc, setupStopRecorderIpc } from './ipc';
+import { setupIpc } from './ipc/ipc';
+import { stopRecordingProcess } from './ipc/recorder-ipc';
+import { stopVideoServer } from './video-server';
 import { createRecorderWindow } from './windows';
 
 void app.whenReady().then(async () => {
-  // Check if the platform is macOS
   if (process.platform !== 'darwin') {
     dialog.showErrorBox('Unsupported Platform', 'This application is only supported on macOS.');
     app.quit();
@@ -16,24 +18,28 @@ void app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  // Check if screen recording permission is granted
-  const screenRecordingPermissionStatus = systemPreferences.getMediaAccessStatus('screen');
-  if (screenRecordingPermissionStatus !== 'granted') {
-    const dialogResponse = await dialog.showMessageBox({
-      title: 'Permission Required',
+  const screenCapturePermission = permissions.getAuthStatus('screen');
+  if (screenCapturePermission !== 'authorized') {
+    await dialog.showMessageBox({
+      title: 'Screen Capture Access',
       message:
-        'This application requires screen recording permission to function. Please grant the permission in the System Settings and restart the application.',
-      buttons: ['Open System Settings', 'Cancel'],
+        'This application needs screen capture access to record the screen. Allow screen capture permission in system settings and restart the application.',
+      type: 'info',
     });
-    try {
-      if (dialogResponse.response === 0) {
-        await shell.openExternal(
-          'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture',
-        );
-      }
-    } finally {
-      app.quit();
-    }
+    permissions.askForScreenCaptureAccess(true);
+    app.quit();
+    return;
+  }
+  const inputMonitoringPermission = permissions.getAuthStatus('input-monitoring');
+  if (inputMonitoringPermission !== 'authorized') {
+    await dialog.showMessageBox({
+      title: 'Input Monitoring Access',
+      message:
+        'This application needs input monitoring access to capture the mouse events. Allow input monitoring permission in system settings and restart the application.',
+      type: 'info',
+    });
+    await permissions.askForInputMonitoringAccess();
+    app.quit();
     return;
   }
 
@@ -43,10 +49,8 @@ void app.whenReady().then(async () => {
     }
   });
 
-  setupRecorderIpc();
-  setupStopRecorderIpc();
+  setupIpc();
 
-  // Create and show the recorder window
   await createRecorderWindow();
 });
 
@@ -54,4 +58,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('will-quit', () => {
+  stopRecordingProcess(true);
+  stopVideoServer();
 });
